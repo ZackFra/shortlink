@@ -1,58 +1,67 @@
+# shortlink
 
-# Welcome to your CDK Python project!
+A URL shortener at `https://link.hakt.tech`. Creating a link requires an AWS signature. Visiting a short link redirects to the stored URL.
 
-This is a blank project for CDK development with Python.
+`POST /` stores a target URL and returns a 6-character token. `GET /{token}` responds with `301` and a `Location` header. Tokens are random and stored in DynamoDB. CloudFront serves `link.hakt.tech`, checks that a `GET` path is a single token, and rate-limits viewers. API Gateway only accepts redirect traffic that came through that distribution.
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+## Layout
 
-This project is set up like a standard Python project.  The initialization
-process also creates a virtualenv within this project, stored under the `.venv`
-directory.  To create the virtualenv it assumes that there is a `python3`
-(or `python` for Windows) executable in your path with access to the `venv`
-package. If for any reason the automatic creation of the virtualenv fails,
-you can create the virtualenv manually.
+| Path | Role |
+|---|---|
+| `shortlink/shortlink_stack.py` | CDK stack |
+| `shortlink/lambda/register_link` | `POST /`, IAM auth |
+| `shortlink/lambda/consume_link` | `GET /{token}`, returns the redirect |
+| `shortlink/lambda/verify_origin` | Checks the CloudFront origin header |
+| `shortlink/cloudfront/reject_bare_path.js` | Rejects `GET` paths that are not a token |
 
-To manually create a virtualenv on MacOS and Linux:
+## Setup
 
-```
-$ python3 -m venv .venv
-```
+The stack deploys in `us-east-1`. The CloudFront certificate and the web ACL both have to live there. The certificate ARN and the domain name are set in `shortlink/shortlink_stack.py`. DNS for `link.hakt.tech` is a CNAME to the distribution, DNS-only, so viewers reach CloudFront rather than Cloudflare.
 
-After the init process completes and the virtualenv is created, you can use the following
-step to activate your virtualenv.
-
-```
-$ source .venv/bin/activate
-```
-
-If you are a Windows platform, you would activate the virtualenv like this:
-
-```
-% .venv\Scripts\activate.bat
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
+pip install python-dotenv
 ```
 
-Once the virtualenv is activated, you can install the required dependencies.
+Create a `.env` file in the repository root. It is gitignored.
 
-```
-$ pip install -r requirements.txt
-```
-
-At this point you can now synthesize the CloudFormation template for this code.
-
-```
-$ cdk synth
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
-To add additional dependencies, for example other CDK libraries, just add
-them to your `requirements.txt` file and rerun the `python -m pip install -r requirements.txt`
-command.
+```
+ORIGIN_VERIFY_SECRET=<that value>
+```
 
-## Useful commands
+CDK reads it when synthesizing. The same value is sent by CloudFront and checked by the origin authorizer. Bootstrap the account once:
 
- * `cdk ls`          list all stacks in the app
- * `cdk synth`       emits the synthesized CloudFormation template
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk docs`        open CDK documentation
+```bash
+cdk bootstrap --region us-east-1
+cdk deploy --region us-east-1
+```
 
-Enjoy!
+## API
+
+Create a link with [awscurl](https://github.com/okigan/awscurl). The caller needs `execute-api:Invoke` in the API account. `--region` is `us-east-1` because that is where the API is deployed, even though the URL is the custom domain.
+
+```bash
+awscurl --profile <profile> --service execute-api --region us-east-1 \
+  -X POST \
+  -H "content-type: application/json" \
+  -d '{"target_url":"https://example.com"}' \
+  "https://link.hakt.tech/"
+```
+
+```json
+{"token": "aB3xY9"}
+```
+
+Open `https://link.hakt.tech/aB3xY9`. A path that is not six letters or digits is rejected at CloudFront. An unknown token is a `404`.
+
+## Commands
+
+* `cdk synth` emit the CloudFormation template
+* `cdk diff` compare the deployed stack with the current code
+* `cdk deploy --region us-east-1` deploy

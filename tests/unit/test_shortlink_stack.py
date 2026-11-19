@@ -16,3 +16,16 @@ def test_routes():
         "RouteKey": "POST /",
         "AuthorizationType": "AWS_IAM"
     })
+
+def test_distribution():
+    app = core.App()
+    stack = ShortlinkStack(app, "ShortlinkStack")
+    template = assertions.Template.from_stack(stack)
+    template.has_resource_properties("AWS::CloudFront::Distribution", {
+        "DistributionConfig": {
+            "Aliases": assertions.Match.array_with(["link.hakt.tech"]),
+            "DefaultCacheBehavior": {
+                "OriginRequestPolicyId": core.aws_cloudfront.OriginRequestPolicy.ALL_VIEWER.origin_request_policy_id
+            }
+        },
+    })

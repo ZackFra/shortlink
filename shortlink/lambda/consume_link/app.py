@@ -1,6 +1,5 @@
 import logging
 import os
-import json
 import boto3
 from botocore.config import Config
 
@@ -29,24 +28,13 @@ def handler(event, context):
         return {
             "statusCode": 404,
             "headers": {
-                "Content-Type": "application/json",
+                "Content-Type": "text/html; charset=utf-8",
             },
-            "body": json.dumps({
-                "error": "Link Not Found",
-                "message": f"No link found for this token.",
-            }),
+            "body": htmlResponse("Link Not Found", f"No link found for this token."),
         }
     except Exception as e:
         logger.exception(e)
-        return {
-            "statusCode": 500,
-            "headers": {
-                "Content-Type": "application/json",
-            },
-            "body": json.dumps({
-                "error": "Internal server error",
-            }),
-        }
+        return htmlResponse("Internal server error", "An unexpected error occurred.")
 
 def consume_link(token: str) -> str:
     table = dynamodb.Table(os.getenv("DYNAMODB_TABLE_NAME"))
@@ -58,3 +46,13 @@ def consume_link(token: str) -> str:
     if "Item" not in response:
         raise LinkNotFoundError(f"Link with token {token} not found")
     return response["Item"]["target_url"]
+
+def htmlResponse(title, message) -> str:
+    error = None
+    for _ in range(3):
+        try:
+            with open("error.html", "r") as file:
+                return file.read().replace("${title}", title).replace("${message}", message)
+        except Exception as e:
+            logger.exception(e)
+    raise error

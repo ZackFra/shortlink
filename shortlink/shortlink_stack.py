@@ -16,11 +16,14 @@ from aws_cdk import (
 from constructs import Construct
 from dotenv import load_dotenv
 import os
+from pathlib import Path
+import json
 
 load_dotenv()
 
 if not os.getenv("ORIGIN_VERIFY_SECRET"):
     raise ValueError("ORIGIN_VERIFY_SECRET is not set in .env file")
+
 
 class ShortlinkStack(Stack):
 
@@ -137,11 +140,16 @@ class ShortlinkStack(Stack):
             stage=http_api.default_stage,
         )
 
+        template_path = Path("shortlink/lambda/consume_link")
+        cloudfront_path = Path("shortlink/cloudfront")
+        error_page = json.dumps((template_path / "error.html").read_text())
+        function_code = (cloudfront_path / "reject_bare_path.js").read_text()
+        function_code = function_code.replace("__ERROR_HTML__", error_page)
+
+        error_page = json.dumps(())
         reject_bare_path = cloudfront.Function(self, "RejectBarePath",
             runtime=cloudfront.FunctionRuntime.JS_2_0,
-            code=cloudfront.FunctionCode.from_file(
-                file_path="shortlink/cloudfront/reject_bare_path.js"
-            )
+            code=cloudfront.FunctionCode.from_inline(function_code)
         )
 
         distribution = cloudfront.Distribution(self, "ShortlinkCdn",

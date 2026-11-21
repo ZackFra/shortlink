@@ -1,3 +1,6 @@
+// replaced at build time by HTML template
+const errorHtml = __ERROR_HTML__
+
 function handler(event) {
     const request = event.request
     if (request.method !== "GET") {
@@ -8,25 +11,31 @@ function handler(event) {
     if (path.length !== 2) {
         return {
             statusCode: 404,
-            statusDescription: "Invalid path",
-            headers: { "content-type": { value: "application/json" } },
-            body: JSON.stringify({
-                error: "Invalid path",
-                message: "The path provided is not valid.",
-            }),
+            headers: { "content-type": { value: "text/html; charset=utf-8" } },
+            body: htmlResponse(
+                "Invalid path",
+                "The path provided is not valid.",
+            ),
         }
     }
     const token = path[1]
     if (!/^[A-Za-z0-9]{6}$/.test(token)) {
         return {
             statusCode: 404,
-            statusDescription: "Invalid token",
-            headers: { "content-type": { value: "application/json" } },
-            body: JSON.stringify({
-                error: "Invalid token",
-                message: "The token provided is not valid.",
-            }),
+            headers: { "content-type": { value: "text/html; charset=utf-8" } },
+            body: htmlResponse(
+                "Invalid token",
+                "The token provided is not valid.",
+            ),
         }
     }
     return request
+}
+
+function htmlResponse(title, message) {
+    return errorHtml
+        .split("${title}")
+        .join(title)
+        .split("${message}")
+        .join(message)
 }

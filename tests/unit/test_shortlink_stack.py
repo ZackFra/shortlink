@@ -23,7 +23,7 @@ def test_distribution():
     template = assertions.Template.from_stack(stack)
     template.has_resource_properties("AWS::CloudFront::Distribution", {
         "DistributionConfig": {
-            "Aliases": assertions.Match.array_with(["link.hakt.tech"]),
+            "Aliases": assertions.Match.array_with(["shortlink.hakt.tech"]),
             "DefaultCacheBehavior": {
                 "OriginRequestPolicyId": core.aws_cloudfront.OriginRequestPolicy.ALL_VIEWER.origin_request_policy_id
             }

@@ -93,8 +93,9 @@ class ShortlinkStack(Stack):
             authorizer=authorizers.HttpIamAuthorizer()
         )
 
-        certificate = acm.Certificate.from_certificate_arn(self, "LinkCert",
-            "arn:aws:acm:us-east-1:464948468327:certificate/edc5058e-4dd6-4837-be2f-770b435363bd",
+        certificate = acm.Certificate(self, "ShortlinkCertificate",
+            domain_name="shortlink.hakt.tech",
+            validation=acm.CertificateValidation.from_dns(),
         )
 
         acl = wafv2.CfnWebACL(self, "LinkAcl",
@@ -126,7 +127,7 @@ class ShortlinkStack(Stack):
         )
 
         domain = apigatewayv2.DomainName(self, "LinkDomain",
-            domain_name="link.hakt.tech",
+            domain_name="shortlink.hakt.tech",
             certificate=certificate,
         )
 
@@ -146,7 +147,7 @@ class ShortlinkStack(Stack):
         distribution = cloudfront.Distribution(self, "ShortlinkCdn",
             certificate=certificate,
             web_acl_id=acl.attr_arn,
-            domain_names=["link.hakt.tech"],
+            domain_names=["shortlink.hakt.tech"],
             default_behavior=cloudfront.BehaviorOptions(
                 origin=origins.HttpOrigin(
                     domain.regional_domain_name,

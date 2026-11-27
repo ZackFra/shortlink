@@ -51,14 +51,14 @@ awscurl --profile <profile> --service execute-api --region us-east-1 \
   -X POST \
   -H "content-type: application/json" \
   -d '{"target_url":"https://example.com"}' \
-  "https://link.hakt.tech/"
+  "https://shortlink.hakt.tech/"
 ```
 
 ```json
 {"token": "aB3xY9"}
 ```
 
-Open `https://link.hakt.tech/aB3xY9`. A path that is not six letters or digits is rejected at CloudFront. An unknown token is a `404`.
+Open `https://shortlink.hakt.tech/aB3xY9`. A path that is not six letters or digits is rejected at CloudFront. An unknown token is a `404`.
 
 ## Commands
 

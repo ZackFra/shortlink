@@ -2,7 +2,7 @@
 
 A URL shortener at `https://shortlink.hakt.tech`. Creating a link requires an AWS signature. Visiting a short link redirects to the stored URL.
 
-`POST /` stores a target URL and returns a 6-character token. `GET /{token}` responds with `301` and a `Location` header. Tokens are random and stored in DynamoDB. CloudFront serves `link.hakt.tech`, checks that a `GET` path is a single token, and rate-limits viewers. API Gateway only accepts redirect traffic that came through that distribution.
+`POST /` stores a target URL and returns a 6-character token. `GET /{token}` responds with `301` and a `Location` header. Tokens are random and stored in DynamoDB. CloudFront serves `shortlink.hakt.tech`, checks that a `GET` path is a single token, and rate-limits viewers. API Gateway only accepts redirect traffic that came through that distribution.
 
 ## Layout
 

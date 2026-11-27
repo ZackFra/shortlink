@@ -16,7 +16,7 @@ A URL shortener at `https://shortlink.hakt.tech`. Creating a link requires an AW
 
 ## Setup
 
-The stack deploys in `us-east-1`. The CloudFront certificate and the web ACL both have to live there. The certificate ARN and the domain name are set in `shortlink/shortlink_stack.py`. DNS for `link.hakt.tech` is a CNAME to the distribution, DNS-only, so viewers reach CloudFront rather than Cloudflare.
+The stack deploys in `us-east-1`. The CloudFront certificate and the web ACL both have to live there. The certificate ARN and the domain name are set in `shortlink/shortlink_stack.py`. DNS for `shortlink.hakt.tech` is a CNAME to the distribution, DNS-only, so viewers reach CloudFront rather than Cloudflare.
 
 ```bash
 python3 -m venv .venv
